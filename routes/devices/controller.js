@@ -9,7 +9,7 @@ router.get('/list', function (request, response, next) {
         deviceId: request.query.deviceId,
         realStateName: request.query.realStateName,
         deviceCode: request.query.deviceCode,
-        isMasterDevice: request.query.isMasterDevice
+        isActiveDevice: request.query.isActiveDevice
     };
 
     Object.keys(filterData).forEach(key => filterData[key] === undefined && delete filterData[key]);
@@ -21,12 +21,10 @@ router.get('/list', function (request, response, next) {
 });
 
 
-router.post('/insert', function (request, response, next) {
+router.post('/getActivationCode', function (request, response, next) {
     let dataObject = {
         deviceId: request.body.deviceId,
-        realStateName: request.body.realStateName,
-        deviceCode: request.body.deviceCode,
-        isMasterDevice: request.body.isMasterDevice
+        realStateName: request.body.realStateName
     };
 
     if (dataObject.deviceId) {
@@ -34,6 +32,7 @@ router.post('/insert', function (request, response, next) {
         db.find(db.COLLECTIONS.DEVICES, {deviceId: request.body.deviceId}).then((devices) => {
             if (devices === null || devices === undefined || devices.length === 0) {
                 dataObject.deviceCode = getUuid(dataObject.deviceId);
+                dataObject.isActiveDevice = false;
                 db.insert(db.COLLECTIONS.DEVICES, dataObject).then(() => {
                     response.status(200).json(dataObject.deviceCode);
                 }).catch(() => {
@@ -44,11 +43,44 @@ router.post('/insert', function (request, response, next) {
             }
         }).catch(() => {
             dataObject.deviceCode = getUuid(dataObject.deviceId);
+            dataObject.isActiveDevice = false;
             db.insert(db.COLLECTIONS.DEVICES, dataObject).then(() => {
                 response.status(200).json(dataObject.deviceCode);
             }).catch(() => {
                 response.status(409).send("device did not added");
             });
+        });
+    } else {
+        response.status(409).send("device id not found");
+    }
+});
+
+router.post('/activeDevice', function (request, response, next) {
+    let dataObject = {
+        deviceId: request.body.deviceId,
+        realStateName: request.body.realStateName,
+        deviceCode: request.body.deviceCode
+    };
+
+    if (dataObject.deviceId) {
+        Object.keys(dataObject).forEach(key => dataObject[key] === undefined && delete dataObject[key]);
+        db.find(db.COLLECTIONS.DEVICES, {deviceId: request.body.deviceId}).then((devices) => {
+            if (devices === null || devices === undefined || devices.length === 0) {
+                if (devices[0].deviceCode === dataObject.deviceCode) {
+                    dataObject.isActiveDevice = true;
+                    db.insert(db.COLLECTIONS.DEVICES, dataObject).then(() => {
+                        response.status(200).json(dataObject.deviceCode);
+                    }).catch(() => {
+                        response.status(409).send("device did not added");
+                    });
+                } else {
+                    response.status(409).send("device id not match");
+                }
+            } else {
+                response.status(200).json(devices[0].deviceCode);
+            }
+        }).catch(() => {
+            response.status(409).send("device id not found");
         });
     } else {
         response.status(409).send("device id not found");
