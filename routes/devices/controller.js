@@ -35,7 +35,7 @@ router.post('/insert', function (request, response, next) {
             if (devices === null || devices === undefined || devices.length === 0) {
                 dataObject.deviceCode = getUuid(dataObject.deviceId);
                 db.insert(db.COLLECTIONS.DEVICES, dataObject).then(() => {
-                    response.status(200).json();
+                    response.status(200).json(dataObject.deviceCode);
                 }).catch(() => {
                     response.status(409).send("device did not added");
                 });
@@ -45,7 +45,7 @@ router.post('/insert', function (request, response, next) {
         }).catch(() => {
             dataObject.deviceCode = getUuid(dataObject.deviceId);
             db.insert(db.COLLECTIONS.DEVICES, dataObject).then(() => {
-                response.status(200).json();
+                response.status(200).json(dataObject.deviceCode);
             }).catch(() => {
                 response.status(409).send("device did not added");
             });
