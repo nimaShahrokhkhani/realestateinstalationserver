@@ -39,7 +39,18 @@ router.post('/getActivationCode', function (request, response, next) {
                     response.status(409).send("device did not added");
                 });
             } else {
-                response.status(200).json(devices[0].deviceCode);
+
+                let newValues = {
+                    $set: {
+                        realStateName: dataObject.realStateName,
+                        isActiveDevice: false,
+                    }
+                };
+                db.update(db.COLLECTIONS.DEVICES, {deviceId: dataObject.deviceId} , newValues ).then((configs) => {
+                    response.status(200).json(devices[0].deviceCode);
+                }).catch(() => {
+                    response.status(409).send("device did not added");
+                });
             }
         }).catch(() => {
             dataObject.deviceCode = getUuid(dataObject.deviceId);
@@ -66,9 +77,16 @@ router.post('/activeDevice', function (request, response, next) {
         Object.keys(dataObject).forEach(key => dataObject[key] === undefined && delete dataObject[key]);
         db.find(db.COLLECTIONS.DEVICES, {deviceId: request.body.deviceId}).then((devices) => {
             if (devices === null || devices === undefined || devices.length === 0) {
+                response.status(409).send("device id not found");
+            } else {
                 if (devices[0].deviceCode === dataObject.deviceCode) {
-                    dataObject.isActiveDevice = true;
-                    db.insert(db.COLLECTIONS.DEVICES, dataObject).then(() => {
+
+                    let newValues = {
+                        $set: {
+                            isActiveDevice: true,
+                        }
+                    };
+                    db.update(db.COLLECTIONS.DEVICES, {deviceId: dataObject.deviceId} , newValues ).then((configs) => {
                         response.status(200).json(dataObject.deviceCode);
                     }).catch(() => {
                         response.status(409).send("device did not added");
@@ -76,8 +94,6 @@ router.post('/activeDevice', function (request, response, next) {
                 } else {
                     response.status(409).send("device id not match");
                 }
-            } else {
-                response.status(200).json(devices[0].deviceCode);
             }
         }).catch(() => {
             response.status(409).send("device id not found");
