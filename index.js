@@ -1,10 +1,15 @@
-#!/usr/bin/env node
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
+var bodyParser     = require('body-parser');
 
-/**
- * Module dependencies.
- */
+var indexRouter = require('./routes/index');
+const cors = require("cors");
 
-var app = require('..');
+var index = express();
+
 var debug = require('debug')('myapp:server');
 var http = require('http');
 
@@ -12,14 +17,14 @@ var http = require('http');
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort('3640');
-app.set('port', port);
+var port = normalizePort('3650');
+index.set('port', port);
 
 /**
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+var server = http.createServer(index);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -59,8 +64,8 @@ function onError(error) {
   }
 
   var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+      ? 'Pipe ' + port
+      : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -84,7 +89,46 @@ function onError(error) {
 function onListening() {
   var addr = server.address();
   var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+      ? 'pipe ' + addr
+      : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+index.use(cors({credentials: true, origin: true}));
+index.use(bodyParser());
+
+index.use(logger('dev'));
+index.use(express.json());
+index.use(express.urlencoded({ extended: false }));
+index.use(cookieParser());
+
+index.use('/', indexRouter);
+
+// catch 404 and forward to error handler
+index.use(function(req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+index.use(function(err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+});
+
+module.exports = index;
