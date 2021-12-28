@@ -1,5 +1,6 @@
+require('dotenv').config()
 var MongoClient = require('mongodb').MongoClient;
-var url = "mongodb://localhost:27017";
+var url = process.env.DB_CONNECTION;
 var dbo = undefined;
 //collections
 
