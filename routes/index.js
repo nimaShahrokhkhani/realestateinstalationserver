@@ -12,6 +12,6 @@ router.use((request, response, next) => {
             next(error);
         });
 });*/
-router.use('/devices', require('./devices'));
+router.use('/api/devices', require('./devices'));
 
 module.exports = router;
